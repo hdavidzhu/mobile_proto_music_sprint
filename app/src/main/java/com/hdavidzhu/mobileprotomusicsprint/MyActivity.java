@@ -52,6 +52,7 @@ public class MyActivity extends Activity implements MediaPlayerControl {
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
 
+        setController();
     }
 
     @Override
@@ -198,5 +199,26 @@ public class MyActivity extends Activity implements MediaPlayerControl {
     @Override
     public int getAudioSessionId() {
         return 0;
+    }
+
+    private void setController(){
+        //set the controller up
+        controller = new MusicController(this);
+
+        controller.setPrevNextListeners(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playNext();
+            }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playPrev();
+            }
+        });
+
+        controller.setMediaPlayer(this);
+        controller.setAnchorView(findViewById(R.id.song_list));
+        controller.setEnabled(true);
     }
 }
