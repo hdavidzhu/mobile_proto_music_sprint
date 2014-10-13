@@ -55,7 +55,8 @@ public class MyActivity extends Activity implements
                 public void onInitialized() {
                     mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
                     mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
-                    mPlayer.play(" "); //start  playing music
+                    mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
+                    Log.d("boop", "things are happening");
                 }
 
                 @Override
