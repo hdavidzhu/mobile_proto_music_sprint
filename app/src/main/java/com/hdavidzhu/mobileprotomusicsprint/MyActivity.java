@@ -22,7 +22,8 @@ public class MyActivity extends Activity implements
         // https://developer.spotify.com/technologies/spotify-android-sdk/tutorial/
 
         PlayerNotificationCallback, ConnectionStateCallback{
-//connection statecallback is the connection to spotify?
+
+    //connection statecallback is the connection to spotify?
     // TODO: Replace with your client ID
     private static final String CLIENT_ID = "2315f1ec631942d88177dcd8c0422e84";
     // TODO: Replace with your redirect URI
@@ -32,6 +33,9 @@ public class MyActivity extends Activity implements
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        Log.d("Test","Test");
+
         super.onCreate(savedInstanceState);//save instance
         setContentView(R.layout.activity_my); //layout xml file
         SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
@@ -48,23 +52,26 @@ public class MyActivity extends Activity implements
         super.onNewIntent(intent);
         Uri uri = intent.getData();
         if (uri != null) { //if this is new
+            Log.i("DebugDebug", uri.toString());
             AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri); //wants to make sure that the credentials are correct
-            Spotify spotify = new Spotify(response.getAccessToken()); //create a new spotify object
-            mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
-                @Override
-                public void onInitialized() {
-                    mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
-                    mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
-                    mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
-                    Log.d("boop", "things are happening");
-                }
+            if (response.getType() == AuthenticationResponse.AuthResponseType.IMPLICIT) {
+                Log.i("DebuGDebug", response.getAccessToken());
+                Spotify spotify = new Spotify(response.getAccessToken());
+                mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
+                    @Override
+                    public void onInitialized() {
+                        mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
+                        mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
+                        mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
+                    }
 
-                @Override
-                public void onError(Throwable throwable) {
-                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());//if something goes wrong. Might wanna put a chance to
-                    //log in again here
-                }
-            });
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());//if something goes wrong. Might wanna put a chance to
+                        //log in again here
+                    }
+                });
+            }
         }
     }
     @Override
