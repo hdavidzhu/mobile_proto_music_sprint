@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.view.View;
 
+import com.firebase.client.Firebase;
 import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
 import android.widget.MediaController.MediaPlayerControl;
 
@@ -53,6 +54,8 @@ public class MyActivity extends Activity implements MediaPlayerControl {
 
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
+
+        Firebase.setAndroidContext(this);
 
         setController();
     }
