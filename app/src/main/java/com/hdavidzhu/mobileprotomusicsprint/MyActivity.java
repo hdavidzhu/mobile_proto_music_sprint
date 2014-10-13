@@ -19,7 +19,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.view.View;
 
+import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
+import com.firebase.client.ValueEventListener;
 import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
 import android.widget.MediaController.MediaPlayerControl;
 
@@ -36,29 +38,17 @@ public class MyActivity extends Activity implements MediaPlayerControl {
     private boolean paused=false,
             playbackPaused=false;
 
+    Firebase snapRef;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
 
-        songView = (ListView)findViewById(R.id.song_list);
+        songView = (ListView) findViewById(R.id.song_list);
         songList = new ArrayList<Song>();
 
-        getSongList();
-
-        Collections.sort(songList, new Comparator<Song>(){
-            public int compare(Song a, Song b){
-                return a.getTitle().compareTo(b.getTitle());
-            }
-        });
-
-        SongAdapter songAdt = new SongAdapter(this, songList);
-        songView.setAdapter(songAdt);
-
-        Firebase.setAndroidContext(this);
-
-        setController();
-    }
+        snapRef = new Firebase("https://snaptunes.firebaseio.com/");
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -103,7 +93,7 @@ public class MyActivity extends Activity implements MediaPlayerControl {
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist));
+                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
             }
             while (musicCursor.moveToNext());
         }

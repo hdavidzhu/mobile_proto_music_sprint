@@ -18,8 +18,7 @@ public class SnapFirebase {
 
     public void postSnap(Song song){
         Map<String, String> snapMap = new HashMap<String,String>();
-        snapMap.put("user", song.getUser());
-        snapMap.put("metadata", song.getData());
+        snapMap.put("uri", song.getURI());
         snapMap.put("formula", song.getFormula());
 
         snapRef.push().setValue(snapMap);

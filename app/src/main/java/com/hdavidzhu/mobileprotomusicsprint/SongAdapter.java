@@ -61,4 +61,8 @@ public class SongAdapter extends BaseAdapter {
         return songLay;
     }
 
+    public void addSong (Song song){
+
+    }
+
 }
