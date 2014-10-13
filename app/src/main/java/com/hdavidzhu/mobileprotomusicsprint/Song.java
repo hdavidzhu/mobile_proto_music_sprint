@@ -8,7 +8,13 @@ public class Song {
     private String uri;
     private String formula;
 
-
+    public Song(String songUri, String songFormula) {
+        id = 0;
+        title = "title";
+        artist = "artist";
+        uri = songUri;
+        formula = songFormula;
+    }
     public Song(long songID, String songTitle, String songArtist, String songUri, String songFormula) {
         id=songID;
         title=songTitle;

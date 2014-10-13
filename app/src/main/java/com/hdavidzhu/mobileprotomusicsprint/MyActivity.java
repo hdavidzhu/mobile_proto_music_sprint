@@ -21,7 +21,7 @@ public class MyActivity extends Activity implements
         //super helpful tutorial:
         // https://developer.spotify.com/technologies/spotify-android-sdk/tutorial/
 
-        PlayerNotificationCallback, ConnectionStateCallback{
+        PlayerNotificationCallback, ConnectionStateCallback {
 
     //connection statecallback is the connection to spotify?
     // TODO: Replace with your client ID
@@ -30,11 +30,12 @@ public class MyActivity extends Activity implements
     private static final String REDIRECT_URI = "snaptunes://callback";
 
     private Player mPlayer;
+
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        Log.d("Test","Test");
+        Log.d("Test", "Test");
 
         super.onCreate(savedInstanceState);//save instance
         setContentView(R.layout.activity_my); //layout xml file
@@ -115,5 +116,10 @@ public class MyActivity extends Activity implements
         // VERY IMPORTANT! This must always be called or else you will leak resources
         Spotify.destroyPlayer(this);
         super.onDestroy();
+    }
+
+    public void getSong() {
+        String uri = "spotify:track:0wrWRmDKwfPrWzWZwBYsTM";
+//        Song currentSong = new Song(thisId, thisTitle, thisArtist, "", "");
     }
 }
