@@ -49,36 +49,32 @@ public class MyActivity extends Activity implements
 
     @Override
     protected void onNewIntent(Intent intent) {
-        Log.d("hey", "i got hit");
         super.onNewIntent(intent);
         Uri uri = intent.getData();
-        if (uri != null) { //if this is new
-            Log.d("uri", "boop");
-            AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri); //wants to make sure that the credentials are correct
-            Spotify spotify = new Spotify(response.getAccessToken()); //create a new spotify object
-            Log.d("wop", "alksjdf;aslkjfd");
+        if (uri != null) {
+            AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri);
+            Spotify spotify = new Spotify(response.getAccessToken());
             mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
                 @Override
                 public void onInitialized() {
-                    Log.d("hey", "imalive");
-                    mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
-                    mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
-                    mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
-                    Log.d("boop", "things are happening");
+                    mPlayer.addConnectionStateCallback(MyActivity.this);
+                    mPlayer.addPlayerNotificationCallback(MyActivity.this);
+                    mPlayer.play("spotify:track:2TpxZ7JUBn3uw46aR7qd6V");
                 }
 
                 @Override
                 public void onError(Throwable throwable) {
-                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());//if something goes wrong. Might wanna put a chance to
-                    //log in again here
+                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
                 }
             });
         }
     }
+
     @Override
     public void onLoggedIn() {
         Log.d("MainActivity", "User logged in");
     }
+
     @Override
     public void onLoggedOut() {
         Log.d("MainActivity", "User logged out");
@@ -106,15 +102,18 @@ public class MyActivity extends Activity implements
 
     @Override
     public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
-        //gets player status. Player state class tells us things like duration of song, if song active, etc
-        //https://developer.spotify.com/android-sdk-docs/
         Log.d("MainActivity", "Playback event received: " + eventType.name());
+        switch (eventType) {
+            // TODO: Handle event type as necessary
+            default:
+                break;
+        }
     }
 
     @Override
     protected void onDestroy() {
-        Spotify.destroyPlayer(this); //This is super important because multiple fragments can access the player,
-        //but there can only be one.If this is not called when with the player, then our app will leak resources.
+        // VERY IMPORTANT! This must always be called or else you will leak resources
+        Spotify.destroyPlayer(this);
         super.onDestroy();
     }
 }
