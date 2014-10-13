@@ -49,29 +49,30 @@ public class MyActivity extends Activity implements
 
     @Override
     protected void onNewIntent(Intent intent) {
+        Log.d("hey", "i got hit");
         super.onNewIntent(intent);
         Uri uri = intent.getData();
         if (uri != null) { //if this is new
-            Log.i("DebugDebug", uri.toString());
+            Log.d("uri", "boop");
             AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri); //wants to make sure that the credentials are correct
-            if (response.getType() == AuthenticationResponse.AuthResponseType.IMPLICIT) {
-                Log.i("DebuGDebug", response.getAccessToken());
-                Spotify spotify = new Spotify(response.getAccessToken());
-                mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
-                    @Override
-                    public void onInitialized() {
-                        mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
-                        mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
-                        mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
-                    }
+            Spotify spotify = new Spotify(response.getAccessToken()); //create a new spotify object
+            Log.d("wop", "alksjdf;aslkjfd");
+            mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
+                @Override
+                public void onInitialized() {
+                    Log.d("hey", "imalive");
+                    mPlayer.addConnectionStateCallback(MyActivity.this); //start a connection
+                    mPlayer.addPlayerNotificationCallback(MyActivity.this); //initalize a player and its callback
+                    mPlayer.play("spotify:track:7d5rvnXSMjYmzYruuUrMNS"); //start  playing music
+                    Log.d("boop", "things are happening");
+                }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());//if something goes wrong. Might wanna put a chance to
-                        //log in again here
-                    }
-                });
-            }
+                @Override
+                public void onError(Throwable throwable) {
+                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());//if something goes wrong. Might wanna put a chance to
+                    //log in again here
+                }
+            });
         }
     }
     @Override
