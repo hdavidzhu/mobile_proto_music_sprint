@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -39,8 +38,8 @@ public class MyActivity extends Activity implements
 
         super.onCreate(savedInstanceState);//save instance
         setContentView(R.layout.activity_my); //layout xml file
-        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
-                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
+//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
+//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
 
         //We only want the user to grant us read private and streaming scope permissions.
         // Scopes let you specify exactly what types of data your application wants to access,
@@ -55,19 +54,19 @@ public class MyActivity extends Activity implements
         if (uri != null) {
             AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri);
             Spotify spotify = new Spotify(response.getAccessToken());
-            mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
-                @Override
-                public void onInitialized() {
-                    mPlayer.addConnectionStateCallback(MyActivity.this);
-                    mPlayer.addPlayerNotificationCallback(MyActivity.this);
-                    mPlayer.play("spotify:track:2TpxZ7JUBn3uw46aR7qd6V");
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
-                }
-            });
+//            mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
+//                @Override
+//                public void onInitialized() {
+//                    mPlayer.addConnectionStateCallback(MyActivity.this);
+//                    mPlayer.addPlayerNotificationCallback(MyActivity.this);
+//                    mPlayer.play("spotify:track:2TpxZ7JUBn3uw46aR7qd6V");
+//                }
+//
+//                @Override
+//                public void onError(Throwable throwable) {
+//                    Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+//                }
+//            });
         }
     }
 
