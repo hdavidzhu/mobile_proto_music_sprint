@@ -15,6 +15,7 @@ public class Song {
         uri = songUri;
         formula = songFormula;
     }
+
     public Song(long songID, String songTitle, String songArtist, String songUri, String songFormula) {
         id=songID;
         title=songTitle;

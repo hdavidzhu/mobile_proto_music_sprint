@@ -11,13 +11,12 @@ import java.util.Map;
 public class SnapFirebase {
     Firebase snapRef;
 
-    public SnapFirebase(){
+    public SnapFirebase() {
         this.snapRef = new Firebase("https://snaptunes.firebaseio.com/");
-
     }
 
-    public void postSnap(Song song){
-        Map<String, String> snapMap = new HashMap<String,String>();
+    public void postSnap(Song song) {
+        Map<String, String> snapMap = new HashMap<String, String>();
         snapMap.put("uri", song.getURI());
         snapMap.put("formula", song.getFormula());
 
