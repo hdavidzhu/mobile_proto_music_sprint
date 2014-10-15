@@ -16,8 +16,11 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.MediaController.MediaPlayerControl;
 import android.widget.MediaController;
 
+import com.firebase.client.Firebase;
+import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import com.spotify.sdk.android.authentication.SpotifyAuthentication;
@@ -32,25 +35,25 @@ import java.util.Comparator;
 
 
 public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
-    //super helpful tutorial:
-    // https://developer.spotify.com/technologies/spotify-android-sdk/tutorial/
-
     //connection statecallback is the connection to spotify?
     // TODO: Replace with your client ID
     private static final String CLIENT_ID = "2315f1ec631942d88177dcd8c0422e84";
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "snaptunes://callback";
+    Firebase snapRef;
     private ArrayList<Song> songList;
     private ListView songView;
     private MusicService musicSrv;
     private Intent playIntent;
+
     private boolean musicBound = false;
+
     //connect to the service
     private ServiceConnection musicConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
+            MusicBinder binder = (MusicBinder) service;
             //get service
             musicSrv = binder.getService();
             //pass list
@@ -71,24 +74,34 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
+//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
+
+        //We only want the user to grant us read private and streaming scope permissions.
+        // Scopes let you specify exactly what types of data your application wants to access,
+        // and the set of scopes you pass in your call determines what access permissions the user is asked to grant.
+        //other options include access to private or public playlists.
+
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_my);
+        setContentView(R.layout.activity_my); //layout xml file
 
         songView = (ListView) findViewById(R.id.song_list);
         songList = new ArrayList<Song>();
 
+        Firebase.setAndroidContext(this);
+        snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+        setController();
+
         getSongList();
+
+        SongAdapter songAdt = new SongAdapter(this, songList);
+        songView.setAdapter(songAdt);
 
         Collections.sort(songList, new Comparator<Song>() {
             public int compare(Song a, Song b) {
                 return a.getTitle().compareTo(b.getTitle());
             }
         });
-
-        SongAdapter songAdt = new SongAdapter(this, songList);
-        songView.setAdapter(songAdt);
-
-        setController();
 
 //        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
 //                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
@@ -104,6 +117,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -112,6 +126,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             paused = false;
         }
     }
+
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -142,11 +157,13 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         paused = true;
     }
 
+
     @Override
     protected void onStop() {
         controller.hide();
         super.onStop();
     }
+
 
     @Override
     protected void onDestroy() {
@@ -155,6 +172,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         Spotify.destroyPlayer(this);
         super.onDestroy();
     }
+
 
     public boolean onOptionsItemSelected(MenuItem item) {
         //menu item selected
@@ -177,12 +195,12 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         Log.d("MainActivity", "User logged in");
     }
 
-    @Override
     public void onLoggedOut() {
         Log.d("MainActivity", "User logged out");
     }
 
     @Override
+
     public void onLoginFailed(Throwable error) {
         Log.d("MainActivity", "Login failed");
     }
@@ -203,12 +221,18 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     }
 
     @Override
-    public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
+    public void onPlaybackEvent(PlayerNotificationCallback.EventType eventType, PlayerState playerState) {
         Log.d("MainActivity", "Playback event received: " + eventType.name());
         switch (eventType) {
             // TODO: Handle event type as necessary
             default:
+                break;
         }
+    }
+
+    public void getSong() {
+        String uri = "spotify:track:0wrWRmDKwfPrWzWZwBYsTM";
+//        Song currentSong = new Song(thisId, thisTitle, thisArtist, "", "");
     }
 
     public void getSongList() {
@@ -231,7 +255,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist));
+                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
             }
             while (musicCursor.moveToNext());
         }

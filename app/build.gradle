@@ -17,6 +17,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/NOTICE'
@@ -38,4 +39,3 @@ dependencies {
     compile 'com.spotify.sdk:spotifysdk:1.0.0-beta4@aar' // NOTE: Version must match!
     compile 'com.firebase:firebase-client-android:1.1.1+'
 }
-
