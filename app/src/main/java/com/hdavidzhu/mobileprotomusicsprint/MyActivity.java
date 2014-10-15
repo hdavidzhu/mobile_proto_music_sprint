@@ -11,11 +11,13 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.MediaController.MediaPlayerControl;
+import android.widget.MediaController;
 
 import com.firebase.client.Firebase;
 import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
@@ -28,27 +30,45 @@ import com.spotify.sdk.android.playback.PlayerNotificationCallback;
 import com.spotify.sdk.android.playback.PlayerState;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 
-public class MyActivity extends Activity implements MediaPlayerControl, ConnectionStateCallback, PlayerNotificationCallback {
+public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
     //connection statecallback is the connection to spotify?
     // TODO: Replace with your client ID
     private static final String CLIENT_ID = "2315f1ec631942d88177dcd8c0422e84";
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "snaptunes://callback";
+    Firebase snapRef;
     private ArrayList<Song> songList;
     private ListView songView;
     private MusicService musicSrv;
     private Intent playIntent;
-    private boolean musicBound=false;
 
+    private boolean musicBound = false;
+
+    //connect to the service
+    private ServiceConnection musicConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicBinder binder = (MusicBinder) service;
+            //get service
+            musicSrv = binder.getService();
+            //pass list
+            musicSrv.setList(songList);
+            musicBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+        }
+    };
     private MusicController controller;
-
-    private boolean paused=false,
-            playbackPaused=false;
-
-    Firebase snapRef;
-
+    private boolean paused = false,
+            playbackPaused = false;
     private Player mPlayer;
 
     //thing that allows us to play songs
@@ -67,9 +87,46 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
 
         songView = (ListView) findViewById(R.id.song_list);
         songList = new ArrayList<Song>();
+
         Firebase.setAndroidContext(this);
         snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+        setController();
+
+        getSongList();
+
+        SongAdapter songAdt = new SongAdapter(this, songList);
+        songView.setAdapter(songAdt);
+
+        Collections.sort(songList, new Comparator<Song>() {
+            public int compare(Song a, Song b) {
+                return a.getTitle().compareTo(b.getTitle());
+            }
+        });
+
+//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
+//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (playIntent == null) {
+            playIntent = new Intent(this, MusicService.class);
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            startService(playIntent);
+        }
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (paused) {
+            setController();
+            paused = false;
+        }
+    }
+
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -95,12 +152,49 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
     }
 
     @Override
-    public void onLoggedIn() {
-        Log.d("MainActivity", "User logged in");
+    protected void onPause() {
+        super.onPause();
+        paused = true;
     }
 
 
     @Override
+    protected void onStop() {
+        controller.hide();
+        super.onStop();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        stopService(playIntent);
+        musicSrv = null;
+        Spotify.destroyPlayer(this);
+        super.onDestroy();
+    }
+
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //menu item selected
+        switch (item.getItemId()) {
+            case R.id.action_shuffle:
+                musicSrv.setShuffle();
+                break;
+            case R.id.action_end:
+                stopService(playIntent);
+                musicSrv = null;
+                System.exit(0);
+                break;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void onLoggedIn() {
+        Log.d("MainActivity", "User logged in");
+    }
+
     public void onLoggedOut() {
         Log.d("MainActivity", "User logged out");
     }
@@ -136,35 +230,19 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
         }
     }
 
-    public boolean onOptionsItemSelected(MenuItem item) {
-        //menu item selected
-        switch (item.getItemId()) {
-            case R.id.action_shuffle:
-                musicSrv.setShuffle();
-                break;
-            case R.id.action_end:
-                stopService(playIntent);
-                musicSrv = null;
-                System.exit(0);
-        }
-        return true;
-    }
-
-
-
     public void getSong() {
         String uri = "spotify:track:0wrWRmDKwfPrWzWZwBYsTM";
 //        Song currentSong = new Song(thisId, thisTitle, thisArtist, "", "");
     }
 
-    public void getSongList(){
+    public void getSongList() {
         // Retrieves song info
 
         ContentResolver musicResolver = getContentResolver();
-        Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        Uri musicUri = MediaStore.Audio.Media.INTERNAL_CONTENT_URI;
         Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
 
-        if(musicCursor!=null && musicCursor.moveToFirst()){
+        if (musicCursor != null && musicCursor.moveToFirst()) {
             // Get columns
             int titleColumn = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.TITLE);
@@ -184,70 +262,12 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
 
     }
 
-    //connect to the service
-    private ServiceConnection musicConnection = new ServiceConnection(){
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicBinder binder = (MusicBinder)service;
-            //get service
-            musicSrv = binder.getService();
-            //pass list
-            musicSrv.setList(songList);
-            musicBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            musicBound = false;
-        }
-    };
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(playIntent==null){
-            playIntent = new Intent(this, MusicService.class);
-            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            startService(playIntent);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        paused=true;
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(paused){
-            setController();
-            paused=false;
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        controller.hide();
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        stopService(playIntent);
-        musicSrv=null;
-        Spotify.destroyPlayer(this);
-        super.onDestroy();
-    }
-
-    public void songPicked(View view){
+    public void songPicked(View view) {
         musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
         musicSrv.playSong();
-        if(playbackPaused){
+        if (playbackPaused) {
             setController();
-            playbackPaused=false;
+            playbackPaused = false;
         }
         controller.show(0);
     }
@@ -259,20 +279,20 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
 
     @Override
     public void pause() {
-        playbackPaused=true;
+        playbackPaused = true;
         musicSrv.pausePlayer();
     }
 
     @Override
     public int getDuration() {
-        if(musicSrv!=null && musicBound && musicSrv.isPng())
+        if (musicSrv != null && musicBound && musicSrv.isPng())
             return musicSrv.getDur();
         else return 0;
     }
 
     @Override
     public int getCurrentPosition() {
-        if(musicSrv!=null && musicBound && musicSrv.isPng())
+        if (musicSrv != null && musicBound && musicSrv.isPng())
             return musicSrv.getPosn();
         else return 0;
     }
@@ -285,7 +305,7 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
 
     @Override
     public boolean isPlaying() {
-        if(musicSrv!=null && musicBound)
+        if (musicSrv != null && musicBound)
             return musicSrv.isPng();
         return false;
     }
@@ -315,7 +335,7 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
         return 0;
     }
 
-    private void setController(){
+    private void setController() {
         //set the controller up
         controller = new MusicController(this);
 
@@ -337,21 +357,21 @@ public class MyActivity extends Activity implements MediaPlayerControl, Connecti
     }
 
     //play next
-    private void playNext(){
+    private void playNext() {
         musicSrv.playNext();
-        if(playbackPaused){
+        if (playbackPaused) {
             setController();
-            playbackPaused=false;
+            playbackPaused = false;
         }
         controller.show(0);
     }
 
     //play previous
-    private void playPrev(){
+    private void playPrev() {
         musicSrv.playPrev();
-        if(playbackPaused){
+        if (playbackPaused) {
             setController();
-            playbackPaused=false;
+            playbackPaused = false;
         }
         controller.show(0);
     }
