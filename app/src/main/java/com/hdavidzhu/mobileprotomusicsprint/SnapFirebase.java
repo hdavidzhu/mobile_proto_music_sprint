@@ -17,6 +17,7 @@ public class SnapFirebase {
         snapMap.put("id", String.valueOf(song.getID()));
         snapMap.put("title", song.getTitle());
         snapMap.put("artist", song.getArtist());
+
         snapMap.put("uri", song.getURI());
         snapMap.put("formula", song.getFormula());
 
