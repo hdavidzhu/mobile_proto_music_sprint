@@ -18,7 +18,11 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.MediaController;
 
+import com.firebase.client.ChildEventListener;
+import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -31,6 +35,7 @@ import com.spotify.sdk.android.playback.PlayerState;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 
 
 public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
@@ -43,7 +48,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     /**
      * FIREBASE *
      */
-    SnapFirebase snapRef;
+    SnapFirebase snapFirebase;
     private Player mPlayer;
 
     /**
@@ -98,7 +103,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
         // Connecting to Firebase
         Firebase.setAndroidContext(this);
-        snapRef = new SnapFirebase();
+        snapFirebase = new SnapFirebase();
 
         //Setting the Playback Controller
         setController();
@@ -110,7 +115,38 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
 
+        Query postsQuery;
+        postsQuery = snapFirebase.snapRef.limit(10);
+        postsQuery.addChildEventListener(new ChildEventListener() {
 
+            @Override
+            public void onChildAdded(DataSnapshot snapshot, String previousChild) {
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot snapshot, String previousChild) {
+                HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
+
+                Song receivedSong = new Song(0,postInfo.get("title"),
+                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
+
+//                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
+//                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
+
+
+                Log.d("Information received", receivedSong.getTitle());
+
+//                songAdt.addSong(new ChatModel(postInfo.get("name"),postInfo.get("message"),postInfo.get("timestamp")));
+//                chatAdapter.notifyDataSetChanged();
+            }
+
+            public void onChildRemoved(DataSnapshot snapshot){
+            }
+            public void onChildMoved(DataSnapshot dataSnapshot, java.lang.String s){
+            }
+            public void onCancelled(FirebaseError firebaseError){
+            }
+        });
     }
 
     @Override
@@ -214,7 +250,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         Song currentSong = musicSrv.getCurrentSong();
 
         //post song to Firebase
-        snapRef.postSnap(currentSong);
+        snapFirebase.postSnap(currentSong);
         musicSrv.playSong();
         if (playbackPaused) {
             setController();
