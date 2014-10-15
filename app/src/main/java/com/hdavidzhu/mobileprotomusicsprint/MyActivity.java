@@ -16,7 +16,6 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.MediaController.MediaPlayerControl;
 import android.widget.MediaController;
 
 import com.firebase.client.Firebase;
@@ -35,19 +34,37 @@ import java.util.Comparator;
 
 
 public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
-    //connection statecallback is the connection to spotify?
-    // TODO: Replace with your client ID
-    private static final String CLIENT_ID = "2315f1ec631942d88177dcd8c0422e84";
-    // TODO: Replace with your redirect URI
-    private static final String REDIRECT_URI = "snaptunes://callback";
+    /**
+     * SPOTIFY *
+     */
+    private static final String CLIENT_ID = "2315f1ec631942d88177dcd8c0422e84"; // TODO: Replace with your client ID
+    private static final String REDIRECT_URI = "snaptunes://callback";          // TODO: Replace with your redirect URI
+
+    /**
+     * FIREBASE *
+     */
     Firebase snapRef;
+    private Player mPlayer;
+
+    /**
+     * LISTVIEW OF SONGS *
+     */
     private ArrayList<Song> songList;
     private ListView songView;
-    private MusicService musicSrv;
-    private Intent playIntent;
 
+    /**
+     * PLAYING MUSIC *
+     */
+    private MusicController controller;
+    private boolean paused = false;
+    private boolean playbackPaused = false;
     private boolean musicBound = false;
 
+    /**
+     * HANDLING SERVICE *
+     */
+    private Intent playIntent;
+    private MusicService musicSrv;
     //connect to the service
     private ServiceConnection musicConnection = new ServiceConnection() {
 
@@ -66,45 +83,31 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             musicBound = false;
         }
     };
-    private MusicController controller;
-    private boolean paused = false,
-            playbackPaused = false;
-    private Player mPlayer;
+
 
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
-//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
-
-        //We only want the user to grant us read private and streaming scope permissions.
-        // Scopes let you specify exactly what types of data your application wants to access,
-        // and the set of scopes you pass in your call determines what access permissions the user is asked to grant.
-        //other options include access to private or public playlists.
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my); //layout xml file
 
-        songView = (ListView) findViewById(R.id.song_list);
-        songList = new ArrayList<Song>();
+        //Spotify Authentication
+//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
+//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
 
+        // Connecting to Firebase
         Firebase.setAndroidContext(this);
         snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+
+        //Setting the Playback Controller
         setController();
 
+        //Setting up the ListView and getting the songs
+        songView = (ListView) findViewById(R.id.song_list);
         getSongList();
 
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
-
-        Collections.sort(songList, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getTitle().compareTo(b.getTitle());
-            }
-        });
-
-//        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
-//                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
     }
 
     @Override
@@ -117,7 +120,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -127,7 +129,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
-
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -135,6 +136,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         if (uri != null) {
             AuthenticationResponse response = SpotifyAuthentication.parseOauthResponse(uri);
             Spotify spotify = new Spotify(response.getAccessToken());
+            //TODO - TEST WITH AUTHENTICATED  PREMIUM ACCOUNT
 //            mPlayer = spotify.getPlayer(this, "My Company Name", this, new Player.InitializationObserver() {
 //                @Override
 //                public void onInitialized() {
@@ -150,6 +152,113 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 //            });
         }
     }
+
+    /** ACTIONBAR FUNCTIONALITY **/
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //menu item selected
+        switch (item.getItemId()) {
+            case R.id.action_shuffle:
+                musicSrv.setShuffle();
+                break;
+            case R.id.action_end:
+                stopService(playIntent);
+                musicSrv = null;
+                System.exit(0);
+                break;
+        }
+
+        return true;
+    }
+
+
+    public void getSongList() {
+        songList = new ArrayList<Song>();
+
+        // Retrieves song info
+        ContentResolver musicResolver = getContentResolver();
+        Uri musicUri = MediaStore.Audio.Media.INTERNAL_CONTENT_URI;
+        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
+
+        if (musicCursor != null && musicCursor.moveToFirst()) {
+            // Get columns
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.TITLE);
+            int idColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ARTIST);
+            // Add songs to list
+            do {
+                long thisId = musicCursor.getLong(idColumn);
+                String thisTitle = musicCursor.getString(titleColumn);
+                String thisArtist = musicCursor.getString(artistColumn);
+                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
+            }
+            while (musicCursor.moveToNext());
+        }
+        Collections.sort(songList, new Comparator<Song>() {
+            public int compare(Song a, Song b) {
+                return a.getTitle().compareTo(b.getTitle());
+            }
+        });
+    }
+
+    public void songPicked(View view) {
+        musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
+        musicSrv.playSong();
+        if (playbackPaused) {
+            setController();
+            playbackPaused = false;
+        }
+        controller.show(0);
+    }
+
+    private void setController() {
+        //set the controller up
+        controller = new MusicController(this);
+
+        controller.setPrevNextListeners(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playNext();
+            }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playPrev();
+            }
+        });
+
+        controller.setMediaPlayer(this);
+        controller.setAnchorView(findViewById(R.id.song_list));
+        controller.setEnabled(true);
+    }
+
+    //play next
+    private void playNext() {
+        musicSrv.playNext();
+        if (playbackPaused) {
+            setController();
+            playbackPaused = false;
+        }
+        controller.show(0);
+    }
+
+    //play previous
+    private void playPrev() {
+        musicSrv.playPrev();
+        if (playbackPaused) {
+            setController();
+            playbackPaused = false;
+        }
+        controller.show(0);
+    }
+
+
+
+    /**
+     * ACTIVITY CALLBACKS
+     */
 
     @Override
     protected void onPause() {
@@ -171,23 +280,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         musicSrv = null;
         Spotify.destroyPlayer(this);
         super.onDestroy();
-    }
-
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        //menu item selected
-        switch (item.getItemId()) {
-            case R.id.action_shuffle:
-                musicSrv.setShuffle();
-                break;
-            case R.id.action_end:
-                stopService(playIntent);
-                musicSrv = null;
-                System.exit(0);
-                break;
-        }
-
-        return true;
     }
 
     @Override
@@ -233,43 +325,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     public void getSong() {
         String uri = "spotify:track:0wrWRmDKwfPrWzWZwBYsTM";
 //        Song currentSong = new Song(thisId, thisTitle, thisArtist, "", "");
-    }
-
-    public void getSongList() {
-        // Retrieves song info
-
-        ContentResolver musicResolver = getContentResolver();
-        Uri musicUri = MediaStore.Audio.Media.INTERNAL_CONTENT_URI;
-        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
-
-        if (musicCursor != null && musicCursor.moveToFirst()) {
-            // Get columns
-            int titleColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media._ID);
-            int artistColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ARTIST);
-            // Add songs to list
-            do {
-                long thisId = musicCursor.getLong(idColumn);
-                String thisTitle = musicCursor.getString(titleColumn);
-                String thisArtist = musicCursor.getString(artistColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
-            }
-            while (musicCursor.moveToNext());
-        }
-
-    }
-
-    public void songPicked(View view) {
-        musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
-        musicSrv.playSong();
-        if (playbackPaused) {
-            setController();
-            playbackPaused = false;
-        }
-        controller.show(0);
     }
 
     @Override
@@ -333,46 +388,5 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     @Override
     public int getAudioSessionId() {
         return 0;
-    }
-
-    private void setController() {
-        //set the controller up
-        controller = new MusicController(this);
-
-        controller.setPrevNextListeners(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playNext();
-            }
-        }, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playPrev();
-            }
-        });
-
-        controller.setMediaPlayer(this);
-        controller.setAnchorView(findViewById(R.id.song_list));
-        controller.setEnabled(true);
-    }
-
-    //play next
-    private void playNext() {
-        musicSrv.playNext();
-        if (playbackPaused) {
-            setController();
-            playbackPaused = false;
-        }
-        controller.show(0);
-    }
-
-    //play previous
-    private void playPrev() {
-        musicSrv.playPrev();
-        if (playbackPaused) {
-            setController();
-            playbackPaused = false;
-        }
-        controller.show(0);
     }
 }
