@@ -108,6 +108,9 @@ public class MusicService extends Service implements
         //get song
         Song playSong = songs.get(songPosn);
 
+        //print song information
+        Log.d("Playing song", songs.get(songPosn).getURI());
+
         songTitle = playSong.getTitle();
         //get id
         long currSong = playSong.getID();
@@ -123,6 +126,10 @@ public class MusicService extends Service implements
         }
 
         player.prepareAsync();
+    }
+
+    public Song getCurrentSong() {
+        return songs.get(songPosn);
     }
 
     @Override

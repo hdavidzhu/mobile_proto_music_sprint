@@ -18,7 +18,11 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.MediaController;
 
+import com.firebase.client.ChildEventListener;
+import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.hdavidzhu.mobileprotomusicsprint.MusicService.MusicBinder;
 import com.spotify.sdk.android.Spotify;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -31,6 +35,7 @@ import com.spotify.sdk.android.playback.PlayerState;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 
 
 public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
@@ -43,7 +48,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     /**
      * FIREBASE *
      */
-    Firebase snapRef;
+    SnapFirebase snapFirebase;
     private Player mPlayer;
 
     /**
@@ -88,16 +93,17 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my); //layout xml file
 
-        //Spotify Authentication
+        //TODO - Fix Spotify Authentication
 //        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
 //                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
 
         // Connecting to Firebase
         Firebase.setAndroidContext(this);
-        snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+        snapFirebase = new SnapFirebase();
 
         //Setting the Playback Controller
         setController();
@@ -108,6 +114,39 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
+
+        Query postsQuery;
+        postsQuery = snapFirebase.snapRef.limit(10);
+        postsQuery.addChildEventListener(new ChildEventListener() {
+
+            @Override
+            public void onChildAdded(DataSnapshot snapshot, String previousChild) {
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot snapshot, String previousChild) {
+                HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
+
+                Song receivedSong = new Song(0,postInfo.get("title"),
+                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
+
+//                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
+//                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
+
+
+                Log.d("Information received", receivedSong.getTitle());
+
+//                songAdt.addSong(new ChatModel(postInfo.get("name"),postInfo.get("message"),postInfo.get("timestamp")));
+//                chatAdapter.notifyDataSetChanged();
+            }
+
+            public void onChildRemoved(DataSnapshot snapshot){
+            }
+            public void onChildMoved(DataSnapshot dataSnapshot, java.lang.String s){
+            }
+            public void onCancelled(FirebaseError firebaseError){
+            }
+        });
     }
 
     @Override
@@ -153,7 +192,9 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
-    /** ACTIONBAR FUNCTIONALITY **/
+    /**
+     * ACTIONBAR FUNCTIONALITY *
+     */
     public boolean onOptionsItemSelected(MenuItem item) {
         //menu item selected
         switch (item.getItemId()) {
@@ -169,7 +210,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
         return true;
     }
-
 
     public void getSongList() {
         songList = new ArrayList<Song>();
@@ -192,7 +232,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
+                songList.add(new Song(thisId, thisTitle, thisArtist, "This is a test URI", ""));
             }
             while (musicCursor.moveToNext());
         }
@@ -205,6 +245,12 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
     public void songPicked(View view) {
         musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
+        Log.d("Playing song", view.getTag().toString());
+
+        Song currentSong = musicSrv.getCurrentSong();
+
+        //post song to Firebase
+        snapFirebase.postSnap(currentSong);
         musicSrv.playSong();
         if (playbackPaused) {
             setController();
@@ -253,8 +299,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
         controller.show(0);
     }
-
-
 
     /**
      * ACTIVITY CALLBACKS
