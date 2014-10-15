@@ -2,6 +2,7 @@ package com.hdavidzhu.mobileprotomusicsprint;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class MyActivity extends Activity implements MediaPlayerControl {
         // Retrieves song info
 
         ContentResolver musicResolver = getContentResolver();
-        Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        Uri musicUri = MediaStore.Audio.Media.INTERNAL_CONTENT_URI;
         Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
 
         if(musicCursor!=null && musicCursor.moveToFirst()){

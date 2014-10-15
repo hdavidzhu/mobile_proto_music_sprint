@@ -12,6 +12,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.PowerManager;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import java.util.Random;
@@ -132,7 +133,7 @@ public class MusicService extends Service implements
         long currSong = playSong.getID();
         //set uri
         Uri trackUri = ContentUris.withAppendedId(
-                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                MediaStore.Audio.Media.INTERNAL_CONTENT_URI,
                 currSong);
 
         try{
