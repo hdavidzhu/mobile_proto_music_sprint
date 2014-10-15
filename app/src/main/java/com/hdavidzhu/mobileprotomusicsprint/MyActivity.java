@@ -43,7 +43,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     /**
      * FIREBASE *
      */
-    Firebase snapRef;
+    SnapFirebase snapRef;
     private Player mPlayer;
 
     /**
@@ -88,16 +88,17 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my); //layout xml file
 
-        //Spotify Authentication
+        //TODO - Fix Spotify Authentication
 //        SpotifyAuthentication.openAuthWindow(CLIENT_ID, "token", REDIRECT_URI,
 //                new String[]{"user-read-private", "streaming"}, null, this); //spotify authentication
 
         // Connecting to Firebase
         Firebase.setAndroidContext(this);
-        snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+        snapRef = new SnapFirebase();
 
         //Setting the Playback Controller
         setController();
@@ -108,6 +109,8 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
+
+
     }
 
     @Override
@@ -153,7 +156,9 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
-    /** ACTIONBAR FUNCTIONALITY **/
+    /**
+     * ACTIONBAR FUNCTIONALITY *
+     */
     public boolean onOptionsItemSelected(MenuItem item) {
         //menu item selected
         switch (item.getItemId()) {
@@ -169,7 +174,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
         return true;
     }
-
 
     public void getSongList() {
         songList = new ArrayList<Song>();
@@ -192,7 +196,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
-                songList.add(new Song(thisId, thisTitle, thisArtist, "", ""));
+                songList.add(new Song(thisId, thisTitle, thisArtist, "This is a test URI", ""));
             }
             while (musicCursor.moveToNext());
         }
@@ -205,6 +209,12 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
     public void songPicked(View view) {
         musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
+        Log.d("Playing song", view.getTag().toString());
+
+        Song currentSong = musicSrv.getCurrentSong();
+
+        //post song to Firebase
+        snapRef.postSnap(currentSong);
         musicSrv.playSong();
         if (playbackPaused) {
             setController();
@@ -253,8 +263,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
         controller.show(0);
     }
-
-
 
     /**
      * ACTIVITY CALLBACKS
