@@ -71,9 +71,11 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     private boolean paused = false;
     private boolean playbackPaused = false;
     private boolean musicBound = false;
+    private Song receivedSong;
 
     /** CONTEXT **/
    private Context context;
+    private Context activity = this;
 
     /**
      * HANDLING SERVICE *
@@ -180,14 +182,32 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             public void onChildChanged(DataSnapshot snapshot, String previousChild) {
                 HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
 
-                Song receivedSong = new Song(0,postInfo.get("title"),
+                receivedSong = new Song(Long.parseLong(postInfo.get("id"),10),postInfo.get("title"),
                         postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
 //                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
 //                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
 
-            Log.d("Information received", receivedSong.getTitle());
+                Log.d("Information received", receivedSong.getTitle());
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+                alertDialogBuilder.setTitle("Song Received!");
+                alertDialogBuilder.setMessage(receivedSong.getTitle());
+                alertDialogBuilder.setPositiveButton("Play", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        musicSrv.playSong(receivedSong);
+                    }
+                });
+
+                alertDialogBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // here you can add functions
+                    }
+                });
+
+                // alertDialog.setIcon(R.drawable.icon);
+                AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.show();
 
 //                songAdt.addSong(new ChatModel(postInfo.get("name"),postInfo.get("message"),postInfo.get("timestamp")));
 //                chatAdapter.notifyDataSetChanged();
@@ -201,24 +221,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             }
         });
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        alertDialogBuilder.setTitle("Reset...");
-        alertDialogBuilder.setMessage("Are you sure?");
-        alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-        // here you can add functions
-            }
-        });
 
-        alertDialogBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                // here you can add functions
-            }
-        });
-
-        // alertDialog.setIcon(R.drawable.icon);
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
 
     }
 

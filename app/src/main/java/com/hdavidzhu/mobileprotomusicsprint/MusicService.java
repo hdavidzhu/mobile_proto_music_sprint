@@ -128,6 +128,32 @@ public class MusicService extends Service implements
         player.prepareAsync();
     }
 
+    public void playSong(Song playSong) {
+        player.reset();
+
+        //get song
+
+
+        songTitle = playSong.getTitle();
+        //get id
+        long currSong = playSong.getID();
+        //set uri
+        Uri trackUri = ContentUris.withAppendedId(
+                MediaStore.Audio.Media.INTERNAL_CONTENT_URI,
+                currSong);
+
+        try {
+            player.setDataSource(getApplicationContext(), trackUri);
+        } catch (Exception e) {
+            Log.e("MUSIC SERVICE", "Error setting data source", e);
+        }
+
+        player.prepareAsync();
+    }
+
+
+//    public
+
     public Song getCurrentSong() {
         return songs.get(songPosn);
     }
