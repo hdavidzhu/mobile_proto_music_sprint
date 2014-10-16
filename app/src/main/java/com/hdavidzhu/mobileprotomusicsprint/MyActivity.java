@@ -140,6 +140,47 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     }
 
+    private static class SendAlertDialog extends AlertDialog {
+        protected SendAlertDialog(Context context) {
+            super(context);
+
+            setTitle("Send Music");
+
+            Button share = new Button(getContext());
+            setView(connect);
+            connect.setText("Don't push me");
+            connect.setOnClickListener(new View.OnClickListener() {
+
+                public void onClick(View v) {
+                    // I want the dialog to close at this point
+                    dismiss();
+                }
+
+//            ReceivedAlertDialog.setButton2
+
+//                public void onClick(DialogInterface dialog, int which) {
+//                        // The 'which' argument contains the index position
+//                        // of the selected item
+//                        switch (which) {
+//                            case 0:
+//                                Toast.makeText(builder.getContext(), "clicked 1", Toast.LENGTH_SHORT).show();
+//                                dismiss();
+//                                break;
+//                            case 1:
+//                                Toast.makeText(builder.getContext(), "clicked 2", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 2:
+//                                Toast.makeText(builder.getContext(), "clicked 3", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 3:
+//                                Toast.makeText(builder.getContext(), "clicked 4", Toast.LENGTH_SHORT).show();
+//                                break;
+//                        }
+//                }
+            });
+        }
+    }
+
     //thing that allows us to play songs
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -361,6 +402,32 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
         controller.show(0);
     }
+
+    public void shareSong(View view) {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setTitle("MUUUSIX");
+        alertDialogBuilder.setMessage("Are you sure?");
+        alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                Song currentSong = musicSrv.getCurrentSong();
+
+                //post song to Firebase
+                snapFirebase.postSnap(currentSong);
+                Log.d("posted song", "IDIDIT");
+            }
+        });
+
+        alertDialogBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // here you can add functions
+            }
+        });
+
+        // alertDialog.setIcon(R.drawable.icon);
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
 
     private void setController() {
         //set the controller up
