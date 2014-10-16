@@ -78,8 +78,11 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     private Song receivedSong;
 
     /** CONTEXT **/
-   private Context context;
+    private Context context;
     private Context activity = this;
+
+    /** USERNAME **/
+    private String storedusername;
 
     /**
      * HANDLING SERVICE *
@@ -174,56 +177,80 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         SongAdapter songAdt = new SongAdapter(this, songList);
         songView.setAdapter(songAdt);
 
-        Query postsQuery;
-        postsQuery = snapFirebase.snapRef.limit(10);
-        postsQuery.addChildEventListener(new ChildEventListener() {
+        AlertDialog.Builder usernameDialogBuilder = new AlertDialog.Builder(activity);
+        usernameDialogBuilder.setTitle("Set username here:");
 
-            @Override
-            public void onChildAdded(DataSnapshot snapshot, String previousChild) {
-            }
+        final EditText username = new EditText(activity);
+        usernameDialogBuilder.setView(username);
 
-            @Override
-            public void onChildChanged(DataSnapshot snapshot, String previousChild) {
-                HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
+        usernameDialogBuilder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                storedusername = username.getText().toString();
+                snapFirebase.postUser(storedusername);
 
-                receivedSong = new Song(Long.parseLong(postInfo.get("id"),10),postInfo.get("title"),
-                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
+                Query postsQuery;
+                postsQuery = snapFirebase.snapRef.child(storedusername).limit(10);
+                postsQuery.addChildEventListener(new ChildEventListener() {
+                    // TODO - WHEN THE QUERY CHECKS FOR UPDATES, I ONLY WANT TO NOTIFY MYSELF WHEN THE SNAPTUNES IS SENT TO ME.
+                    // TODO - RIGHT NOW, I AM QUERYING FOR ALL UPDATES, SO OTHER PEOPLE'S SNAPTUNES ALSO COME TO ME.
+
+                    @Override
+                    public void onChildAdded(DataSnapshot snapshot, String previousChild) {
+                    }
+
+                    @Override
+                    public void onChildChanged(DataSnapshot snapshot, String previousChild) {
+                        HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
+
+                        receivedSong = new Song(Long.parseLong(postInfo.get("id"),10),postInfo.get("title"),
+                                postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
 //                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
 //                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
+                        Log.d("Information received", receivedSong.getTitle());
+                        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+                        alertDialogBuilder.setTitle("Song Received!");
+                        alertDialogBuilder.setMessage(receivedSong.getTitle());
 
-                Log.d("Information received", receivedSong.getTitle());
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
-                alertDialogBuilder.setTitle("Song Received!");
-                alertDialogBuilder.setMessage(receivedSong.getTitle());
-                alertDialogBuilder.setPositiveButton("Play", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        musicSrv.playSong(receivedSong);
-                    }
-                });
+                        final EditText input = new EditText(activity);
+                        alertDialogBuilder.setView(input);
 
-                alertDialogBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // here you can add functions
-                    }
-                });
+                        alertDialogBuilder.setPositiveButton("Play", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                musicSrv.playSong(receivedSong);
+                            }
+                        });
 
-                // alertDialog.setIcon(R.drawable.icon);
-                AlertDialog alertDialog = alertDialogBuilder.create();
-                alertDialog.show();
+                        alertDialogBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // here you can add functions
+                            }
+                        });
+
+                        // alertDialog.setIcon(R.drawable.icon);
+                        AlertDialog alertDialog = alertDialogBuilder.create();
+                        alertDialog.show();
 
 //                songAdt.addSong(new ChatModel(postInfo.get("name"),postInfo.get("message"),postInfo.get("timestamp")));
 //                chatAdapter.notifyDataSetChanged();
-        }
+                    }
 
-            public void onChildRemoved(DataSnapshot snapshot){
-            }
-            public void onChildMoved(DataSnapshot dataSnapshot, java.lang.String s){
-            }
-            public void onCancelled(FirebaseError firebaseError){
+                    public void onChildRemoved(DataSnapshot snapshot){
+                    }
+                    public void onChildMoved(DataSnapshot dataSnapshot, java.lang.String s){
+                    }
+                    public void onCancelled(FirebaseError firebaseError){
+                    }
+                });
             }
         });
+
+        // alertDialog.setIcon(R.drawable.icon);
+        AlertDialog alertDialog = usernameDialogBuilder.create();
+        alertDialog.show();
+
+
 
 
 
