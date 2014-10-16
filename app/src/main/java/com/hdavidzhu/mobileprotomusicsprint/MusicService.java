@@ -4,11 +4,15 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.CountDownTimer;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.MediaStore;
@@ -17,10 +21,18 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Random;
 
+import java.io.*;
+
 public class MusicService extends Service implements
         MediaPlayer.OnPreparedListener,
         MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener {
+
+    SoundPool soundPool;
+    public int streamId = 0;
+    public int soundId = -1;
+    public float pitch = 01f;
+
 
     private static final int NOTIFY_ID = 1;
     private final IBinder musicBind = new MusicBinder();
@@ -118,6 +130,18 @@ public class MusicService extends Service implements
         Uri trackUri = ContentUris.withAppendedId(
                 MediaStore.Audio.Media.INTERNAL_CONTENT_URI,
                 currSong);
+        Log.d("TAG", trackUri.toString());
+        //soundId = soundPool.load(trackUri, 1);
+
+
+//        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+//            @Override
+//            public void onLoadComplete(SoundPool soundPool, int i, int i2) {
+//                streamId = soundPool.play(soundId, 1, 1, 1, 3, pitch);
+//                soundPool.setLoop(streamId, -1);
+//                Log.e("TAG", String.valueOf(streamId));
+//            }
+//        });
 
         try {
             player.setDataSource(getApplicationContext(), trackUri);
@@ -125,6 +149,28 @@ public class MusicService extends Service implements
             Log.e("MUSIC SERVICE", "Error setting data source", e);
         }
 
+
+        final CountDownTimer cntr_aCounter = new CountDownTimer(2000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                player.start();
+            }
+
+            public void onFinish() {
+                //code fire after finish
+                player.stop();
+
+                //String filePath = Environment.getExternalStorageDirectory()+"\\Internal storage\\Music\\SingleLadies.mp3";
+                //"/yourfolderNAme/yopurfile.mp3";
+                player = new  MediaPlayer();
+                player.setDataSource("/mnt/sdcard/Internal storage/Music/SingleLadies.mp3");
+                player.prepare();
+                player.start();
+
+            }
+        };
+        cntr_aCounter.start();
+        Log.d("SONG TAG", player.getTrackInfo().toString());
+        Log.d("TIME TAG", cntr_aCounter.toString());
         player.prepareAsync();
     }
 
