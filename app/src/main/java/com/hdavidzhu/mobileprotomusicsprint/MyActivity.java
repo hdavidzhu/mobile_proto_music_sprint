@@ -14,9 +14,11 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.MediaController;
 import android.app.AlertDialog;
@@ -362,12 +364,16 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
         controller.show(0);
     }
+
     String song_formula;
     String[] effects;
     public void shareSong(View view) {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        alertDialogBuilder.setTitle("Pick your effects");
+        alertDialogBuilder.setTitle("Pick your user and  song effects");
 //        alertDialogBuilder.setMessage("Are you sure?");
+        final EditText sendUser = new EditText(activity);
+        alertDialogBuilder.setView(sendUser);
+
         effects = getResources().getStringArray(R.array.effects);
         alertDialogBuilder.setMultiChoiceItems(effects, null, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
@@ -385,9 +391,10 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 Song currentSong = musicSrv.getCurrentSong();
+                String recipientUsername = sendUser.getText().toString();
 
                 //post song to Firebase
-                snapFirebase.postSnap(currentSong, song_formula);
+                snapFirebase.postSnap(currentSong, song_formula, recipientUsername);
                 Log.d("posted song", "IDIDIT");
             }
             });
