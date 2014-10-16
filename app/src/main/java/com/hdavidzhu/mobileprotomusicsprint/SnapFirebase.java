@@ -7,9 +7,15 @@ import java.util.Map;
 
 public class SnapFirebase {
     Firebase snapRef;
+    String username;
 
     public SnapFirebase() {
         this.snapRef = new Firebase("https://snaptunes.firebaseio.com/");
+    }
+
+    public void postUser(String username) {
+        this.username = username;
+        snapRef.child(username).setValue("");
     }
 
     public void postSnap(Song song) {
@@ -21,7 +27,7 @@ public class SnapFirebase {
         snapMap.put("uri", song.getURI());
         snapMap.put("formula", song.getFormula());
 
-        snapRef.child("David").setValue(snapMap);
+        snapRef.child(this.username).setValue(snapMap);
 //        snapRef.push().setValue(snapMap);
 
     }

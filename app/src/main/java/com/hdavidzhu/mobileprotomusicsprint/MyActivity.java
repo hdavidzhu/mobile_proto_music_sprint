@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.MediaController;
 import android.app.AlertDialog;
@@ -74,8 +75,11 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     private Song receivedSong;
 
     /** CONTEXT **/
-   private Context context;
+    private Context context;
     private Context activity = this;
+
+    /** USERNAME **/
+    private String storedusername;
 
     /**
      * HANDLING SERVICE *
@@ -171,8 +175,10 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         songView.setAdapter(songAdt);
 
         Query postsQuery;
-        postsQuery = snapFirebase.snapRef.limit(10);
+        postsQuery = snapFirebase.snapRef.child(storedusername).limit(10);
         postsQuery.addChildEventListener(new ChildEventListener() {
+            // TODO - WHEN THE QUERY CHECKS FOR UPDATES, I ONLY WANT TO NOTIFY MYSELF WHEN THE SNAPTUNES IS SENT TO ME.
+            // TODO - RIGHT NOW, I AM QUERYING FOR ALL UPDATES, SO OTHER PEOPLE'S SNAPTUNES ALSO COME TO ME.
 
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChild) {
@@ -188,11 +194,14 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 //                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
 //                        postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
-
                 Log.d("Information received", receivedSong.getTitle());
                 AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
                 alertDialogBuilder.setTitle("Song Received!");
                 alertDialogBuilder.setMessage(receivedSong.getTitle());
+
+                final EditText input = new EditText(activity);
+                alertDialogBuilder.setView(input);
+
                 alertDialogBuilder.setPositiveButton("Play", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         musicSrv.playSong(receivedSong);
@@ -221,7 +230,22 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             }
         });
 
+        AlertDialog.Builder usernameDialogBuilder = new AlertDialog.Builder(activity);
+        usernameDialogBuilder.setTitle("Set username here:");
 
+        final EditText username = new EditText(activity);
+        usernameDialogBuilder.setView(username);
+
+        usernameDialogBuilder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                storedusername = username.getText().toString();
+                snapFirebase.postUser(storedusername);
+            }
+        });
+
+        // alertDialog.setIcon(R.drawable.icon);
+        AlertDialog alertDialog = usernameDialogBuilder.create();
+        alertDialog.show();
 
     }
 
