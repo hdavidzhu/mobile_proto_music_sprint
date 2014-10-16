@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
@@ -15,8 +16,11 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.MediaController;
+import android.app.AlertDialog;
+import android.widget.Toast;
 
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
@@ -57,6 +61,9 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     private ArrayList<Song> songList;
     private ListView songView;
 
+    /** ALERT DIALOG **/
+    private AlertDialog.Builder builder;
+
     /**
      * PLAYING MUSIC *
      */
@@ -64,6 +71,11 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
     private boolean paused = false;
     private boolean playbackPaused = false;
     private boolean musicBound = false;
+    private Song receivedSong;
+
+    /** CONTEXT **/
+   private Context context;
+    private Context activity = this;
 
     /**
      * HANDLING SERVICE *
@@ -89,6 +101,46 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
     };
 
+    private static class ReceivedAlertDialog extends AlertDialog {
+        protected ReceivedAlertDialog(Context context) {
+            super(context);
+
+            setTitle("Profile");
+
+            Button connect = new Button(getContext());
+            setView(connect);
+            connect.setText("Don't push me");
+            connect.setOnClickListener(new View.OnClickListener() {
+
+                public void onClick(View v) {
+                    // I want the dialog to close at this point
+                    dismiss();
+                }
+
+//            ReceivedAlertDialog.setButton2
+
+//                public void onClick(DialogInterface dialog, int which) {
+//                        // The 'which' argument contains the index position
+//                        // of the selected item
+//                        switch (which) {
+//                            case 0:
+//                                Toast.makeText(builder.getContext(), "clicked 1", Toast.LENGTH_SHORT).show();
+//                                dismiss();
+//                                break;
+//                            case 1:
+//                                Toast.makeText(builder.getContext(), "clicked 2", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 2:
+//                                Toast.makeText(builder.getContext(), "clicked 3", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 3:
+//                                Toast.makeText(builder.getContext(), "clicked 4", Toast.LENGTH_SHORT).show();
+//                                break;
+//                        }
+//                }
+            });
+        }
+    }
 
     //thing that allows us to play songs
     @Override
@@ -105,8 +157,11 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         Firebase.setAndroidContext(this);
         snapFirebase = new SnapFirebase();
 
-        //Setting the Playback Controller
+        // Setting the Playback Controller
         setController();
+
+        // Setting context
+        this.context = getApplicationContext();
 
         //Setting up the ListView and getting the songs
         songView = (ListView) findViewById(R.id.song_list);
@@ -127,7 +182,7 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             public void onChildChanged(DataSnapshot snapshot, String previousChild) {
                 HashMap<String,String> postInfo = (HashMap) snapshot.getValue();
 
-                Song receivedSong = new Song(0,postInfo.get("title"),
+                receivedSong = new Song(Long.parseLong(postInfo.get("id"),10),postInfo.get("title"),
                         postInfo.get("artist"),postInfo.get("uri"),postInfo.get("formula"));
 
 //                Song receivedSong = new Song(Long.parseLong(postInfo.get("id"), 10),postInfo.get("title"),
@@ -135,10 +190,28 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
 
 
                 Log.d("Information received", receivedSong.getTitle());
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+                alertDialogBuilder.setTitle("Song Received!");
+                alertDialogBuilder.setMessage(receivedSong.getTitle());
+                alertDialogBuilder.setPositiveButton("Play", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        musicSrv.playSong(receivedSong);
+                    }
+                });
+
+                alertDialogBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // here you can add functions
+                    }
+                });
+
+                // alertDialog.setIcon(R.drawable.icon);
+                AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.show();
 
 //                songAdt.addSong(new ChatModel(postInfo.get("name"),postInfo.get("message"),postInfo.get("timestamp")));
 //                chatAdapter.notifyDataSetChanged();
-            }
+        }
 
             public void onChildRemoved(DataSnapshot snapshot){
             }
@@ -147,6 +220,9 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             public void onCancelled(FirebaseError firebaseError){
             }
         });
+
+
+
     }
 
     @Override
@@ -157,6 +233,36 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
             startService(playIntent);
         }
+
+//        AlertDialog receivedAlertDialog = new ReceivedAlertDialog(this);
+//        receivedAlertDialog.show();
+
+//        builder = new AlertDialog.Builder(this.context);
+//        builder.setTitle("Title");
+//        builder.setItems(new CharSequence[]
+//                        {"button 1", "button 2", "button 3", "button 4"},
+//                new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        // The 'which' argument contains the index position
+//                        // of the selected item
+//                        switch (which) {
+//                            case 0:
+//                                Toast.makeText(builder.getContext(), "clicked 1", Toast.LENGTH_SHORT).show();
+//                                dismiss();
+//                                break;
+//                            case 1:
+//                                Toast.makeText(builder.getContext(), "clicked 2", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 2:
+//                                Toast.makeText(builder.getContext(), "clicked 3", Toast.LENGTH_SHORT).show();
+//                                break;
+//                            case 3:
+//                                Toast.makeText(builder.getContext(), "clicked 4", Toast.LENGTH_SHORT).show();
+//                                break;
+//                        }
+//                    }
+//                });
+//        builder.create().show();
     }
 
     @Override
