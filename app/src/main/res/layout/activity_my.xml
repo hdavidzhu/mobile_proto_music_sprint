@@ -9,11 +9,15 @@
     <ListView
         android:id="@+id/song_list"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="462dp">
     </ListView>
 
-    <!--<Button-->
-        <!--android:layout_width="fill_parent"-->
-        <!--android:layout_height="fill_parent" />-->
+    <Button
+        android:layout_width="248dp"
+        android:layout_height="wrap_content"
+        android:text="Share Song"
+        android:onClick="shareSong"
+        android:id="@+id/share_song"
+        android:layout_gravity="center_horizontal" />
 
 </LinearLayout>
