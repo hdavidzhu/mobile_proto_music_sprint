@@ -158,13 +158,17 @@ public class MusicService extends Service implements
             public void onFinish() {
                 //code fire after finish
                 player.stop();
+                try {
+                    //String filePath = Environment.getExternalStorageDirectory()+"\\Internal storage\\Music\\SingleLadies.mp3";
+                    //"/yourfolderNAme/yopurfile.mp3";
+                    player = new MediaPlayer();
+                    player.setDataSource("/mnt/sdcard/Internal storage/Music/SingleLadies.mp3");
+                    player.prepare();
+                    player.start();
+                } catch (IOException e) {
+                    System.err.println("An IOException was caught :"+e.getMessage());
+                }
 
-                //String filePath = Environment.getExternalStorageDirectory()+"\\Internal storage\\Music\\SingleLadies.mp3";
-                //"/yourfolderNAme/yopurfile.mp3";
-                player = new  MediaPlayer();
-                player.setDataSource("/mnt/sdcard/Internal storage/Music/SingleLadies.mp3");
-                player.prepare();
-                player.start();
 
             }
         };
