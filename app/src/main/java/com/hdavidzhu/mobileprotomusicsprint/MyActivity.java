@@ -36,10 +36,12 @@ import com.spotify.sdk.android.playback.Player;
 import com.spotify.sdk.android.playback.PlayerNotificationCallback;
 import com.spotify.sdk.android.playback.PlayerState;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 
 public class MyActivity extends Activity implements MediaController.MediaPlayerControl, PlayerNotificationCallback, ConnectionStateCallback {
@@ -353,10 +355,6 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
         Log.d("Playing song", view.getTag().toString());
 
-        Song currentSong = musicSrv.getCurrentSong();
-
-        //post song to Firebase
-        snapFirebase.postSnap(currentSong);
         musicSrv.playSong();
         if (playbackPaused) {
             setController();
@@ -364,6 +362,46 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         }
         controller.show(0);
     }
+    String song_formula;
+    String[] effects;
+    public void shareSong(View view) {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setTitle("Pick your effects");
+//        alertDialogBuilder.setMessage("Are you sure?");
+        effects = getResources().getStringArray(R.array.effects);
+        alertDialogBuilder.setMultiChoiceItems(effects, null, new DialogInterface.OnMultiChoiceClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which,
+                                        boolean isChecked) {
+                        if (isChecked) {
+                            // If the user checked the item, add it to the selected items
+                            song_formula = effects[0];
+                        } else if (song_formula == effects[0]) {
+                            // Else, if the item is already in the array, remove it
+                            song_formula = "";
+                        }
+                    }
+        });
+        alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                Song currentSong = musicSrv.getCurrentSong();
+
+                //post song to Firebase
+                snapFirebase.postSnap(currentSong, song_formula);
+                Log.d("posted song", "IDIDIT");
+            }
+            });
+
+            alertDialogBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                                       // here you can add functions
+            }
+            });
+
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+    }
+
 
     private void setController() {
         //set the controller up
