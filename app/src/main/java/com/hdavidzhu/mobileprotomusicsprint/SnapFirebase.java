@@ -13,7 +13,7 @@ public class SnapFirebase {
         this.snapRef = new Firebase("https://snaptunes.firebaseio.com/");
     }
 
-    public void postSnap(Song song, String formula) {
+    public void postSnap(Song song, String formula, String sendUser) {
         Map<String, String> snapMap = new HashMap<String, String>();
         snapMap.put("id", String.valueOf(song.getID()));
         snapMap.put("title", song.getTitle());
@@ -22,7 +22,7 @@ public class SnapFirebase {
         snapMap.put("uri", song.getURI());
         snapMap.put("formula", formula);
 
-        snapRef.child("David").setValue(snapMap);
+        snapRef.child(sendUser).setValue(snapMap);
 //        snapRef.push().setValue(snapMap);
 
     }
