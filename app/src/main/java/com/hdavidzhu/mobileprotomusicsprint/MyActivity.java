@@ -363,20 +363,20 @@ public class MyActivity extends Activity implements MediaController.MediaPlayerC
         controller.show(0);
     }
     String song_formula;
+    String[] effects;
     public void shareSong(View view) {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setTitle("Pick your effects");
 //        alertDialogBuilder.setMessage("Are you sure?");
-        final List<String> effects = new ArrayList<String>();
-        effects.add("Cats");
+        effects = getResources().getStringArray(R.array.effects);
         alertDialogBuilder.setMultiChoiceItems(effects, null, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which,
                                         boolean isChecked) {
                         if (isChecked) {
                             // If the user checked the item, add it to the selected items
-                            song_formula = effects.get(0);
-                        } else if (song_formula.equals(effects.get(0))) {
+                            song_formula = effects[0];
+                        } else if (song_formula == effects[0]) {
                             // Else, if the item is already in the array, remove it
                             song_formula = "";
                         }
